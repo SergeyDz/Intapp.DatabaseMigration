@@ -7,10 +7,7 @@ package intapp.databasemigration.Table;
 
 import intapp.databasemigration.POCO.TableCopyRequest;
 import akka.actor.ActorRef;
-import akka.actor.Props;
 import akka.actor.UntypedActor;
-import intapp.databasemigration.Metadata.MsSqlSchemaActor;
-import intapp.databasemigration.Metadata.PgSqlSchemaActor;
 import intapp.databasemigration.POCO.Table;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -86,7 +83,6 @@ public class TableCopyActor extends UntypedActor {
                             for (int i = 1; i <= meta.getColumnCount(); i++) {
                                 String columnName = meta.getColumnName(i);
                                 if ("CustomFieldsXml".equals(columnName)) {
-
                                     s2.setObject(i, XML.toJSONObject(rs.getString(i)), java.sql.Types.VARCHAR);
                                 } else {
                                     s2.setObject(i, rs.getObject(i));
@@ -101,7 +97,6 @@ public class TableCopyActor extends UntypedActor {
                                 System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch pre-started...");
                                 s2.executeBatch();
                                 System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch commited.");
-
                                 s2 = destinationConnection.prepareStatement(sql);
                             }
                         }

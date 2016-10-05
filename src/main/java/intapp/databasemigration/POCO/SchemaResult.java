@@ -5,7 +5,6 @@
  */
 package intapp.databasemigration.POCO;
 
-import intapp.databasemigration.POCO.Table;
 import java.util.List;
 
 /**
@@ -13,11 +12,10 @@ import java.util.List;
  * @author sdzyuban
  */
 public class SchemaResult {
-    
-    public SchemaResult(List<Table> results)
-    {
+
+    public SchemaResult(List<Table> results) {
         this.Tables = results;
     }
-    
-    public final List<Table> Tables;  
+
+    public final List<Table> Tables;
 }

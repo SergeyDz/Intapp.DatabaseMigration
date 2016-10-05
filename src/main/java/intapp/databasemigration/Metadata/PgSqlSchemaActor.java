@@ -10,14 +10,13 @@ package intapp.databasemigration.Metadata;
  * @author sdzyuban
  */
 public class PgSqlSchemaActor extends SchemaActor {
-    
-    public PgSqlSchemaActor()
-    {
+
+    public PgSqlSchemaActor() {
         super();
-        
+
         this.sql = "SELECT table_schema as \"schema\", table_name as \"table\", column_name as \"column\", data_type as \"type\""
-           + " FROM information_schema.columns"
-           + " WHERE table_schema = 'public'";
+                + " FROM information_schema.columns"
+                + " WHERE table_schema = 'public'";
     }
 
 }

@@ -6,7 +6,6 @@
 package intapp.databasemigration.Engine;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import intapp.databasemigration.Metadata.MsSqlSchemaActor;
@@ -26,63 +25,49 @@ public class MigrationEngineActor extends UntypedActor {
 
     private final ActorRef msConnectionActor;
     private final ActorRef pgConnectionActor;
-    
-    public MigrationEngineActor(ActorRef ms, ActorRef pg)
-    {
+
+    public MigrationEngineActor(ActorRef ms, ActorRef pg) {
         this.msConnectionActor = ms;
         this.pgConnectionActor = pg;
     }
-    
-    private List<Table> MsSqlTables; 
-    private List<Table> PgSqlTables; 
-    
+
+    private List<Table> MsSqlTables;
+    private List<Table> PgSqlTables;
+
     @Override
     public void onReceive(Object message) throws Exception {
-        if("start".equals(message))
-        {
-             this.msConnectionActor.tell("get", self());
-        } 
-        else if(message instanceof Connection)
-        {
-            Connection connection = (Connection)message;
-            if(connection.getMetaData().getURL().contains("sqlserver"))
-            {
+        if ("start".equals(message)) {
+            this.msConnectionActor.tell("get", self());
+        } else if (message instanceof Connection) {
+            Connection connection = (Connection) message;
+            if (connection.getMetaData().getURL().contains("sqlserver")) {
                 ActorRef schemaActor = context().actorOf(Props.create(MsSqlSchemaActor.class), "MsSqlSchemaActor");
                 schemaActor.tell(connection, self());
-            }
-            else
-            {
+            } else {
                 ActorRef schemaActor = context().actorOf(Props.create(PgSqlSchemaActor.class), "PgSqlSchemaActor");
                 schemaActor.tell(connection, self());
             }
-        }
-        else if(message instanceof SchemaResult)
-        {
-            SchemaResult schema = (SchemaResult)message;
-            if(sender().path().name().contains("MsSqlSchemaActor"))
-            {
+        } else if (message instanceof SchemaResult) {
+            SchemaResult schema = (SchemaResult) message;
+            if (sender().path().name().contains("MsSqlSchemaActor")) {
                 MsSqlTables = schema.Tables;
 
                 this.pgConnectionActor.tell("get", self());
-            }
-            else
-            {
+            } else {
                 this.PgSqlTables = schema.Tables;
-                
+
                 System.out.println("Metadata scan completed");
                 System.out.println("Found source tables: " + this.MsSqlTables.size());
                 System.out.println("Found destination tables: " + this.PgSqlTables.size());
-                
+
                 ActorRef dataCopyActor = context().actorOf(Props.create(PrepareTargetDatabaseActor.class, this.pgConnectionActor));
                 dataCopyActor.tell(new PrepareDatabaseRequest(Arrays.asList("CleanUp.sql", "RemoveForeignKeys.sql")), self());
             }
-            
-        }
-        else if("target ready".equals(message))
-        {
+
+        } else if ("target ready".equals(message)) {
             ActorRef dataCopyActor = context().actorOf(Props.create(DataCopyActor.class, this.MsSqlTables, this.PgSqlTables, this.msConnectionActor, this.pgConnectionActor));
             dataCopyActor.tell("start", self());
         }
     }
-    
+
 }

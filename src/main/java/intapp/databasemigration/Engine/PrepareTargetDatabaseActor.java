@@ -8,17 +8,12 @@ package intapp.databasemigration.Engine;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import intapp.databasemigration.POCO.PrepareDatabaseRequest;
-import intapp.databasemigration.POCO.Table;
-import intapp.databasemigration.POCO.TableRowMetadata;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 
@@ -29,7 +24,7 @@ import org.apache.commons.io.IOUtils;
 public class PrepareTargetDatabaseActor extends UntypedActor {
 
     private final ActorRef pgConnectionActor;
-    
+
     private ActorRef engine;
 
     private Connection connection;
@@ -47,7 +42,7 @@ public class PrepareTargetDatabaseActor extends UntypedActor {
         if (message instanceof PrepareDatabaseRequest) {
             PrepareDatabaseRequest request = (PrepareDatabaseRequest) message;
             this.engine = sender();
-            
+
             request.Scripts.forEach(script -> {
 
                 try {
@@ -62,25 +57,20 @@ public class PrepareTargetDatabaseActor extends UntypedActor {
                     System.err.println(ex);
                 }
             });
-            
+
             this.pgConnectionActor.tell("get", self());
-        
-        } 
-        else if(message instanceof Connection)
-        {
-            this.connection = (Connection)message;
+
+        } else if (message instanceof Connection) {
+            this.connection = (Connection) message;
             this.queries.forEach(sql -> {
-                try
-                {
+                try {
                     PreparedStatement s1 = connection.prepareStatement(sql);
                     s1.execute();
-                }
-                catch(Exception ex)
-                {
-                    System.err.println(ex); 
+                } catch (Exception ex) {
+                    System.err.println(ex);
                 }
             });
-            
+
             System.out.println("SQL queries executed");
             this.engine.tell("target ready", null);
         }

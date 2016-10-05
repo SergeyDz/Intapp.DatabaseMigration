@@ -13,20 +13,19 @@ import java.sql.SQLException;
  * @author sdzyuban
  */
 public class TableRowMetadata {
-    
-    public TableRowMetadata(ResultSet rs) throws SQLException
-    {
-       this.Schema = rs.getString("schema");
-       this.Table = rs.getString("table");
-       this.Column = rs.getString("column");
-       this.Type = rs.getString("type");
+
+    public TableRowMetadata(ResultSet rs) throws SQLException {
+        this.Schema = rs.getString("schema");
+        this.Table = rs.getString("table");
+        this.Column = rs.getString("column");
+        this.Type = rs.getString("type");
     }
-    
+
     public String Schema;
-    
+
     public String Table;
-    
-    public String Column; 
-    
+
+    public String Column;
+
     public String Type;
 }

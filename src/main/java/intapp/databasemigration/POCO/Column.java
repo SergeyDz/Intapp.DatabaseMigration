@@ -10,14 +10,13 @@ package intapp.databasemigration.POCO;
  * @author sdzyuban
  */
 public class Column {
-    
-    public Column(String name, String type)
-    {
+
+    public Column(String name, String type) {
         this.Name = name;
         this.Type = type;
     }
-    
-    public final String Name; 
-    
+
+    public final String Name;
+
     public final String Type;
 }

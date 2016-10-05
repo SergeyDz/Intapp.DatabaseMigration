@@ -23,50 +23,47 @@ import java.util.stream.Collectors;
  * @author sdzyuban
  */
 public class SchemaActor extends UntypedActor {
-    
+
     private Connection connection;
-    
+
     private final List<Table> tables;
-    
+
     protected String sql;
-    
-    public SchemaActor()
-    {
+
+    public SchemaActor() {
         this.tables = new ArrayList<>();
     }
 
     @Override
     public void onReceive(Object message) throws Exception {
-        
-        this.connection = (Connection)message;
-        
+
+        this.connection = (Connection) message;
+
         List<TableRowMetadata> rows = new ArrayList<>();
-        
+
         try (PreparedStatement s1 = connection.prepareStatement(sql);
-            ResultSet rs = s1.executeQuery()){
-                while (rs.next()) {
-                    rows.add(new TableRowMetadata(rs));
-                }
+                ResultSet rs = s1.executeQuery()) {
+            while (rs.next()) {
+                rows.add(new TableRowMetadata(rs));
+            }
+        } catch (Exception ex) {
+            System.err.println(ex);
         }
-        catch(Exception ex)
-        {
-             System.err.println(ex);
-        }
-         
+
         System.out.println("Database schema scan completed. Found " + rows.size() + " found");
-         
+
         Map<String, List<TableRowMetadata>> groupedMetadata = rows.stream().collect(Collectors.groupingBy(w -> w.Table));
-         
+
         groupedMetadata.forEach((key, values) -> {
             Table t = new Table(values.get(0).Schema, key);
             values.forEach(c -> {
                 t.Columns.add(new Column(c.Column, c.Type));
             });
-            
+
             tables.add(t);
         });
-        
+
         sender().tell(new SchemaResult(tables), self());
     }
-    
+
 }

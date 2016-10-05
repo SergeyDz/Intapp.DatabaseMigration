@@ -13,22 +13,20 @@ import java.util.List;
  * @author sdzyuban
  */
 public class Table {
-    
-    public Table()
-    {
+
+    public Table() {
         this.Columns = new ArrayList<>();
     }
-    
-    public Table(String schema, String name) 
-    {
+
+    public Table(String schema, String name) {
         this();
         this.Name = name;
         this.Schema = schema;
     }
 
     public String Name;
-    
+
     public String Schema;
-    
+
     public List<Column> Columns;
 }

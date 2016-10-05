@@ -8,9 +8,7 @@ package intapp.databasemigration.Engine;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.japi.Option;
 import akka.routing.RoundRobinPool;
-import intapp.databasemigration.Metadata.PgSqlSchemaActor;
 import intapp.databasemigration.POCO.Table;
 import intapp.databasemigration.Table.TableCopyActor;
 import intapp.databasemigration.POCO.TableCopyRequest;
@@ -58,12 +56,10 @@ public class DataCopyActor extends UntypedActor {
                     } else {
                         System.err.println("Destination table for source " + a.Name + " was not found");
                     }
-                } 
-                else
-                {
+                } else {
                     System.out.println("Table " + a.Name + " skipped.");
                 }
-                
+
             });
         }
     }

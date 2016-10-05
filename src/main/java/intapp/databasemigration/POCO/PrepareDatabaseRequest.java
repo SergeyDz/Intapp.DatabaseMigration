@@ -13,11 +13,10 @@ import java.util.List;
  * @author sdzyuban
  */
 public class PrepareDatabaseRequest {
-    
-    public PrepareDatabaseRequest(List<String> args)
-    {
+
+    public PrepareDatabaseRequest(List<String> args) {
         this.Scripts = args;
     }
-    
+
     public List<String> Scripts;
 }

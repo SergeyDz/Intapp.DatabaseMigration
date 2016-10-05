@@ -13,15 +13,14 @@ import java.util.List;
  * @author sdzyuban
  */
 public class TableCopyRequest {
-    
-    public final Table source; 
-    
+
+    public final Table source;
+
     public final Table destination;
-    
-    public TableCopyRequest(Table source, Table destination)
-    {
+
+    public TableCopyRequest(Table source, Table destination) {
         this.source = source;
         this.destination = destination;
     }
-        
+
 }

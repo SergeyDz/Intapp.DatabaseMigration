@@ -10,15 +10,14 @@ package intapp.databasemigration.Metadata;
  * @author sdzyuban
  */
 public class MsSqlSchemaActor extends SchemaActor {
-    
-    public MsSqlSchemaActor()
-    {
+
+    public MsSqlSchemaActor() {
         super();
-        
+
         this.sql = "SELECT t.TABLE_SCHEMA as 'schema', t.TABLE_NAME as 'table', c.COLUMN_NAME as 'column', c.DATA_TYPE as 'type'"
-            + " FROM INFORMATION_SCHEMA.Tables t"
-            + " inner join INFORMATION_SCHEMA.COLUMNS c on c.TABLE_NAME = t.TABLE_NAME"
-            + " WHERE t.TABLE_TYPE = 'BASE TABLE' and t.TABLE_SCHEMA = 'dbo'";
+                + " FROM INFORMATION_SCHEMA.Tables t"
+                + " inner join INFORMATION_SCHEMA.COLUMNS c on c.TABLE_NAME = t.TABLE_NAME"
+                + " WHERE t.TABLE_TYPE = 'BASE TABLE' and t.TABLE_SCHEMA = 'dbo'";
     }
 
 }
