@@ -46,9 +46,7 @@ public class TableCopyActor extends UntypedActor {
             TableCopyRequest request = (TableCopyRequest) message;
             this.sourceTable = request.source;
             this.destinationTable = request.destination;
-
             System.out.println("Starting copy data for Table: " + sourceTable.Name);
-
             msConnectionActor.tell("get", self());
         } else if (message instanceof Connection) {
             Connection connection = (Connection) message;
@@ -58,6 +56,8 @@ public class TableCopyActor extends UntypedActor {
             } else {
                 destinationConnection = connection;
 
+                final TableFormatter formatter = TableFormatter.Create(sourceTable, destinationTable);
+                
                 try (PreparedStatement s1 = sourceConnection.prepareStatement("select * from " + this.sourceTable.Name);
                         ResultSet rs = s1.executeQuery()) {
                     ResultSetMetaData meta = rs.getMetaData();
@@ -68,9 +68,9 @@ public class TableCopyActor extends UntypedActor {
                     }
 
                     String sql = "insert into " + destinationTable.Name + " ("
-                            + sourceTable.Columns.stream().map(c -> TableFormatter.MapName(c.Name, destinationTable)).collect(Collectors.joining(", "))
+                            + sourceTable.Columns.stream().map(c -> formatter.MapName(c.Name)).collect(Collectors.joining(", "))
                             + ") values ("
-                            + sourceTable.Columns.stream().map(c -> TableFormatter.MapValue(c.Name, destinationTable)).collect(Collectors.joining(", "))
+                            + sourceTable.Columns.stream().map(c -> formatter.MapValue(c.Name)).collect(Collectors.joining(", "))
                             + ")";
 
                     int counter = 0;
@@ -117,5 +117,4 @@ public class TableCopyActor extends UntypedActor {
         }
 
     }
-
 }

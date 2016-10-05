@@ -15,9 +15,24 @@ import java.util.Optional;
  */
 public class TableFormatter {
     
-    public static String MapName(String columnName, Table destination)
+    private final Table source; 
+    
+    private final Table destination;
+    
+    public TableFormatter(Table source, Table destination)
     {
-        Optional<Column> destinationColumn = destination.Columns.stream().filter(m -> m.Name.toLowerCase().equals(columnName.toLowerCase())).findFirst();
+        this.source = source;
+        this.destination = destination;
+    }
+    
+    public static TableFormatter Create(Table source, Table destination)
+    {
+        return new TableFormatter(source, destination);
+    }
+    
+    
+    public String MapName(String columnName)
+    {     
         if("customfieldsxml".equals(columnName.toLowerCase()))
         {
             return "customfieldsjson";
@@ -25,23 +40,24 @@ public class TableFormatter {
         
          if("default".equals(columnName.toLowerCase()))
         {
-            return String.format("\"%s\"", destinationColumn.get().Name);
+            return String.format("\"%s\"", columnName.toLowerCase());
         }
         
         return columnName.toLowerCase();
     }
     
-    public static String MapValue(String columnName, Table destination)
+    public String MapValue(String columnName)
     {
-        Optional<Column> destinationColumn = destination.Columns.stream().filter(m -> m.Name.toLowerCase().equals(MapName(columnName, destination))).findFirst();
+        Optional<Column> columnA = source.Columns.stream().filter(m -> m.Name.toLowerCase().equals(columnName.toLowerCase())).findFirst();
+        Optional<Column> columnB = destination.Columns.stream().filter(m -> m.Name.toLowerCase().equals(columnName.toLowerCase())).findFirst();
         
-        if(destinationColumn.isPresent())
+        if(columnB.isPresent())
         {
-            if(destinationColumn.get().Type.equals("uuid"))
+            if(columnB.get().Type.equals("uuid"))
             {
                 return "?::uuid";
             }
-            else if(destinationColumn.get().Type.equals("jsonb"))
+            else if(columnB.get().Type.equals("jsonb"))
             {
                 return "to_json(?::json)";
             }
