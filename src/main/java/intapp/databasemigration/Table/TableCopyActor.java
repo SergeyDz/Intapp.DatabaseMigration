@@ -26,11 +26,11 @@ import org.json.XML;
 public class TableCopyActor extends UntypedActor {
 
     private Table sourceTable;
-
     private Table destinationTable;
 
     private final ActorRef msConnectionActor;
     private final ActorRef pgConnectionActor;
+    private ActorRef sender;
 
     private Connection sourceConnection;
     private Connection destinationConnection;
@@ -44,6 +44,7 @@ public class TableCopyActor extends UntypedActor {
     public void onReceive(Object message) throws Exception {
         if (message instanceof TableCopyRequest) {
             TableCopyRequest request = (TableCopyRequest) message;
+            this.sender = sender();
             this.sourceTable = request.source;
             this.destinationTable = request.destination;
             System.out.println("Starting copy data for Table: " + sourceTable.Name);
@@ -105,12 +106,21 @@ public class TableCopyActor extends UntypedActor {
                         s2.executeBatch();
                         System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch completed.");
                         s2.close();
-                    } catch (SQLException ex) {
-                        System.err.println("ERROR processing table " + this.sourceTable.Name + ": " + ex + ". " + ex.getNextException());
+                        
+                        this.sender.tell("Done. " + destinationTable.Name + " " + counter + " rows.", self());
+                        
+                    } 
+                    catch (SQLException ex) {
+                        String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex + ". " + ex.getNextException();
+                        System.err.println(error);
                         s2.close();
-                    } catch (Exception ex) {
-                        System.err.println("ERROR processing table " + this.sourceTable.Name + ": " + ex);
+                        this.sender.tell(error, self());
+                    } 
+                    catch (Exception ex) {
+                        String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex;
+                        System.err.println(error);
                         s2.close();
+                        this.sender.tell(error, self());
                     }
                 }
             }

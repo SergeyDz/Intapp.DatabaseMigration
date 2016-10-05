@@ -40,7 +40,7 @@ public class TableFormatter {
         
          if("default".equals(columnName.toLowerCase()))
         {
-            return String.format("\"%s\"", columnName.toLowerCase());
+            return String.format("\"%s\"", "Default");
         }
         
         return columnName.toLowerCase();
@@ -49,7 +49,7 @@ public class TableFormatter {
     public String MapValue(String columnName)
     {
         Optional<Column> columnA = source.Columns.stream().filter(m -> m.Name.toLowerCase().equals(columnName.toLowerCase())).findFirst();
-        Optional<Column> columnB = destination.Columns.stream().filter(m -> m.Name.toLowerCase().equals(columnName.toLowerCase())).findFirst();
+        Optional<Column> columnB = destination.Columns.stream().filter(m -> MapName(columnName).equals(m.Name.toLowerCase())).findFirst();
         
         if(columnB.isPresent())
         {
