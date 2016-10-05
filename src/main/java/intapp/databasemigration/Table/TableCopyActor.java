@@ -31,6 +31,8 @@ public class TableCopyActor extends UntypedActor {
     private final ActorRef msConnectionActor;
     private final ActorRef pgConnectionActor;
     private ActorRef sender;
+    
+    private int pageSize;
 
     private Connection sourceConnection;
     private Connection destinationConnection;
@@ -38,6 +40,8 @@ public class TableCopyActor extends UntypedActor {
     public TableCopyActor(ActorRef ms, ActorRef pg) {
         this.msConnectionActor = ms;
         this.pgConnectionActor = pg;
+        
+        this.pageSize = 1000;
     }
 
     @Override
@@ -48,6 +52,12 @@ public class TableCopyActor extends UntypedActor {
             this.sourceTable = request.source;
             this.destinationTable = request.destination;
             System.out.println("Starting copy data for Table: " + sourceTable.Name);
+            
+            if("requestdefinitions".equals(this.destinationTable.Name))
+            {
+                this.pageSize = 100;
+            }
+            
             msConnectionActor.tell("get", self());
         } else if (message instanceof Connection) {
             Connection connection = (Connection) message;
@@ -58,74 +68,84 @@ public class TableCopyActor extends UntypedActor {
                 destinationConnection = connection;
 
                 final TableFormatter formatter = TableFormatter.Create(sourceTable, destinationTable);
-                
-                try (PreparedStatement s1 = sourceConnection.prepareStatement("select * from " + this.sourceTable.Schema + "." + this.sourceTable.Name);
-                        ResultSet rs = s1.executeQuery()) {
-                    ResultSetMetaData meta = rs.getMetaData();
-
-                    List<String> columns = new ArrayList<>();
-                    for (int i = 1; i <= meta.getColumnCount(); i++) {
-                        columns.add(meta.getColumnName(i).toLowerCase());
-                    }
-
-                    String sql = "insert into " + destinationTable.Name + " ("
+                String sql = "insert into " + destinationTable.Name + " ("
                             + sourceTable.Columns.stream().map(c -> formatter.MapName(c.Name)).collect(Collectors.joining(", "))
                             + ") values ("
                             + sourceTable.Columns.stream().map(c -> formatter.MapValue(c.Name)).collect(Collectors.joining(", "))
                             + ")";
-
-                    int counter = 0;
-
-                    System.out.println(sql);
-                    PreparedStatement s2 = null;
-                    try {
-                        s2 = destinationConnection.prepareStatement(sql);
-                        while (rs.next()) {
-                            for (int i = 1; i <= meta.getColumnCount(); i++) {
-                                String columnName = meta.getColumnName(i);
-                                if ("CustomFieldsXml".equals(columnName)) {
-                                    s2.setObject(i, XML.toJSONObject(rs.getString(i)), java.sql.Types.VARCHAR);
-                                } else {
-                                    s2.setObject(i, rs.getObject(i));
-                                }
-                            }
-
-                            s2.addBatch();
-                            counter++;
-
-                            if (counter % 1000 == 0) {
-                                System.out.println(destinationTable.Name + ": " + counter + " items.");
-                                System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch pre-started...");
-                                s2.executeBatch();
-                                System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch commited.");
-                                s2.close();
-                                s2 = destinationConnection.prepareStatement(sql);
-                            }
-                        }
-
-                        System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch started...");
-                        s2.executeBatch();
-                        System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch completed.");
-                        s2.close();
-                        
-                        this.sender.tell("Done. " + destinationTable.Name + " " + counter + " rows.", self());
-                        
+                 
+                int from = 1;
+                int to = from + this.pageSize;
+                int totalItems = 0;
+                
+                boolean result = true;
+                
+                while(result)
+                {
+                    int iterationCount = ProcessPage(from, to, sql);
+                    totalItems = totalItems + iterationCount;
+                    
+                    if(iterationCount == pageSize)
+                    {
+                        from = to;
+                        to = to + pageSize;
                     } 
-                    catch (SQLException ex) {
-                        String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex + ". " + ex.getNextException();
-                        System.err.println(error);
-                        s2.close();
-                        this.sender.tell(error, self());
-                    } 
-                    catch (Exception ex) {
-                        String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex;
-                        System.err.println(error);
-                        s2.close();
-                        this.sender.tell(error, self());
+                    else
+                    {
+                        result = false;
                     }
-                }
+                } 
+                 
+                this.sender.tell(String.format("Done. %s completed. Total rows: %s.", destinationTable.Name, totalItems), self());
             }
         }
+    }
 
+    private int ProcessPage(int from, int to, String sql) throws SQLException {
+        try (PreparedStatement s1 = sourceConnection.prepareStatement(String.format("SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY %s) AS RowNum FROM %s.%s ) AS RowConstrainedResult WHERE RowNum >= %s AND RowNum < %s ORDER BY RowNum", 
+                this.sourceTable.Columns.get(0).Name,
+                this.sourceTable.Schema, this.sourceTable.Name, from, to));
+                ResultSet rs = s1.executeQuery()) {
+            ResultSetMetaData meta = rs.getMetaData();
+            int counter = 0;
+            
+            System.out.println(sql);
+            try(PreparedStatement s2 = destinationConnection.prepareStatement(sql)) {
+                while (rs.next()) {
+                    for (int i = 1; i <= meta.getColumnCount() - 1; i++) {
+                        String columnName = meta.getColumnName(i);
+                        if ("CustomFieldsXml".equals(columnName)) {
+                            s2.setObject(i, XML.toJSONObject(rs.getString(i)), java.sql.Types.VARCHAR);
+                        } else {
+                            s2.setObject(i, rs.getObject(i));
+                        }
+                    }
+                    
+                    s2.addBatch();
+                    counter++;
+                }
+                
+                System.out.println(String.format("insert into %s from %s to %s", destinationTable.Name, from, to));
+                s2.executeBatch();
+                System.out.println(String.format("insert into %s from %s to %s copleted. Records: %s", destinationTable.Name, from, to, counter));
+                s2.close();
+            }
+            catch (SQLException ex) {
+                String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex + ". " + ex.getNextException();
+                System.err.println(error);
+                this.sender.tell(error, self());
+                
+                return 0;
+            }
+            catch (Exception ex) {
+                String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex;
+                System.err.println(error);
+                this.sender.tell(error, self());
+                
+                return 0;
+            }
+            
+            return counter;
+        }
     }
 }
