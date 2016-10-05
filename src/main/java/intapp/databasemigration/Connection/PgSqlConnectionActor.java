@@ -9,7 +9,6 @@ import akka.actor.UntypedActor;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 
 /**
  *
@@ -30,6 +29,7 @@ public class PgSqlConnectionActor extends UntypedActor {
 
         if (connection == null) {
             System.out.println("Get pgsql connection");
+            Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection(this.connectionString);
         }
 

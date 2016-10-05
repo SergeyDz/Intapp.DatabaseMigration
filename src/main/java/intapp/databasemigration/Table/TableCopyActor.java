@@ -98,6 +98,7 @@ public class TableCopyActor extends UntypedActor {
                                 System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch pre-started...");
                                 s2.executeBatch();
                                 System.out.println("insert into " + destinationTable.Name + ": " + counter + " batch commited.");
+                                s2.close();
                                 s2 = destinationConnection.prepareStatement(sql);
                             }
                         }
