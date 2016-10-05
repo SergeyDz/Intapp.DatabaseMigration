@@ -59,7 +59,7 @@ public class TableCopyActor extends UntypedActor {
 
                 final TableFormatter formatter = TableFormatter.Create(sourceTable, destinationTable);
                 
-                try (PreparedStatement s1 = sourceConnection.prepareStatement("select * from " + this.sourceTable.Name);
+                try (PreparedStatement s1 = sourceConnection.prepareStatement("select * from " + this.sourceTable.Schema + "." + this.sourceTable.Name);
                         ResultSet rs = s1.executeQuery()) {
                     ResultSetMetaData meta = rs.getMetaData();
 

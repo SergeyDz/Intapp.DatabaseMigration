@@ -64,9 +64,14 @@ public class MigrationEngineActor extends UntypedActor {
                 dataCopyActor.tell(new PrepareDatabaseRequest(Arrays.asList("CleanUp.sql", "RemoveForeignKeys.sql")), self());
             }
 
-        } else if ("target ready".equals(message)) {
+        } 
+        else if ("target ready".equals(message)) {
             ActorRef dataCopyActor = context().actorOf(Props.create(DataCopyActor.class, this.MsSqlTables, this.PgSqlTables, this.msConnectionActor, this.pgConnectionActor));
             dataCopyActor.tell("start", self());
+        }
+        else if("Done".equals(message))
+        {
+            context().system().shutdown();
         }
     }
 

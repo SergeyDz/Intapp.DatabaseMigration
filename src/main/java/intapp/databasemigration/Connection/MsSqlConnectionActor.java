@@ -17,16 +17,12 @@ import java.sql.SQLException;
 public class MsSqlConnectionActor extends UntypedActor {
 
     private final String connectionString;
-    private final String user; 
-    private final String password;
     
     private Connection connection;
     
-    public MsSqlConnectionActor(String connectionString, String user, String password) throws ClassNotFoundException, SQLException
+    public MsSqlConnectionActor(String connectionString) throws ClassNotFoundException, SQLException
     {
         this.connectionString = connectionString;
-        this.user = user;
-        this.password = password;
     }
     
     @Override
@@ -35,7 +31,7 @@ public class MsSqlConnectionActor extends UntypedActor {
         if(connection == null)
         {
             //Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");        
-            this.connection = DriverManager.getConnection(connectionString, user, password);
+            this.connection = DriverManager.getConnection(connectionString);
         }
         
         sender().tell(this.connection, self());

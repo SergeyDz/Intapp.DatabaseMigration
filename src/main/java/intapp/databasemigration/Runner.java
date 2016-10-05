@@ -12,6 +12,9 @@ import akka.routing.RoundRobinPool;
 import intapp.databasemigration.Connection.MsSqlConnectionActor;
 import intapp.databasemigration.Connection.PgSqlConnectionActor;
 import intapp.databasemigration.Engine.MigrationEngineActor;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -19,11 +22,26 @@ import intapp.databasemigration.Engine.MigrationEngineActor;
  */
 public class Runner {
 
+    private static Map<String, String> propertiesMap;
+    
     public static void main(String[] args) throws Exception {
         ActorSystem system = ActorSystem.create("data-migration-system");
-
-        ActorRef msConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(MsSqlConnectionActor.class, "jdbc:sqlserver://sdzyuban-pc.fg.local;databaseName=POC-OMM", "sa", "Tsunami9")));
-        ActorRef pgConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(PgSqlConnectionActor.class, "jdbc:postgresql://sdzyuban-pc.fg.local:5432/opendb", "postgres", "Tsunami9")));
+         
+        propertiesMap = new HashMap<>();
+        
+        if(args != null && args.length > 0)
+        {
+            for (String arg : args) {
+                if (arg.contains("=")) {
+                    String key = arg.substring(0, arg.indexOf('='));
+                    String value = arg.substring(arg.indexOf('=') + 1);
+                    propertiesMap.put(key, value);
+                }
+            }
+        }
+        
+        ActorRef msConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(MsSqlConnectionActor.class, propertiesMap.get("mssql-connection"))));
+        ActorRef pgConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(PgSqlConnectionActor.class, propertiesMap.get("pgsql-connection"))));
 
         System.out.println("Actor sysrem data-migration-system started.");
 

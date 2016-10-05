@@ -16,7 +16,7 @@ public class MsSqlSchemaActor extends SchemaActor {
 
         this.sql = "SELECT t.TABLE_SCHEMA as 'schema', t.TABLE_NAME as 'table', c.COLUMN_NAME as 'column', c.DATA_TYPE as 'type'"
                 + " FROM INFORMATION_SCHEMA.Tables t"
-                + " inner join INFORMATION_SCHEMA.COLUMNS c on c.TABLE_NAME = t.TABLE_NAME"
+                + " inner join INFORMATION_SCHEMA.COLUMNS c on c.TABLE_NAME = t.TABLE_NAME and c.TABLE_SCHEMA = t.TABLE_SCHEMA"
                 + " WHERE t.TABLE_TYPE = 'BASE TABLE' and t.TABLE_SCHEMA = 'dbo'";
     }
 

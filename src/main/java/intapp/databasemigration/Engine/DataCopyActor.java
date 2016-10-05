@@ -29,6 +29,7 @@ public class DataCopyActor extends UntypedActor {
 
     private final ActorRef msConnectionActor;
     private final ActorRef pgConnectionActor;
+    private ActorRef sender;
     
     private int workers;
 
@@ -51,7 +52,10 @@ public class DataCopyActor extends UntypedActor {
     @Override
     public void onReceive(Object message) throws Exception {
         if ("start".equals(message)) {
+            
+            this.sender = sender();
             RoundRobinPool pool = new RoundRobinPool(8);
+            
             this.source.forEach(a -> {
 
                 if (!skip.contains(a.Name)) {
@@ -80,6 +84,8 @@ public class DataCopyActor extends UntypedActor {
                 this.statuses.forEach(a->{
                     System.out.println(a);
                 });
+                
+                this.sender.tell("Done", self());
             }
         }
     }

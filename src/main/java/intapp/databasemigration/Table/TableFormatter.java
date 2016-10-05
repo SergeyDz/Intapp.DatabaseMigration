@@ -30,7 +30,6 @@ public class TableFormatter {
         return new TableFormatter(source, destination);
     }
     
-    
     public String MapName(String columnName)
     {     
         if("customfieldsxml".equals(columnName.toLowerCase()))

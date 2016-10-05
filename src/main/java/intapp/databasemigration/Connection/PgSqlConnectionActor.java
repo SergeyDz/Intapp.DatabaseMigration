@@ -18,15 +18,11 @@ import java.util.Properties;
 public class PgSqlConnectionActor extends UntypedActor {
 
     private final String connectionString;
-    private final String user;
-    private final String password;
 
     private Connection connection;
 
-    public PgSqlConnectionActor(String connectionString, String user, String password) throws ClassNotFoundException, SQLException {
+    public PgSqlConnectionActor(String connectionString) throws ClassNotFoundException, SQLException {
         this.connectionString = connectionString;
-        this.user = user;
-        this.password = password;
     }
 
     @Override
@@ -34,13 +30,7 @@ public class PgSqlConnectionActor extends UntypedActor {
 
         if (connection == null) {
             System.out.println("Get pgsql connection");
-
-            //Class.forName("org.postgresql.Driver");
-            String url = connectionString;
-            Properties props = new Properties();
-            props.setProperty("user", user);
-            props.setProperty("password", password);
-            this.connection = DriverManager.getConnection(url, props);
+            this.connection = DriverManager.getConnection(this.connectionString);
         }
 
         sender().tell(connection, self());
