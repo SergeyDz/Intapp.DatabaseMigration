@@ -55,7 +55,7 @@ public class TableCopyActor extends UntypedActor {
             
             if("requestdefinitions".equals(this.destinationTable.Name))
             {
-                this.pageSize = 100;
+                this.pageSize = 10;
             }
             
             msConnectionActor.tell("get", self());
