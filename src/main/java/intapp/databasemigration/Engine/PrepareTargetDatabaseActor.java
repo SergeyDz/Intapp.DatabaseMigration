@@ -23,14 +23,14 @@ import org.apache.commons.io.IOUtils;
  */
 public class PrepareTargetDatabaseActor extends UntypedActor {
 
-    private final ActorRef pgConnectionActor;
+    protected final ActorRef pgConnectionActor;
 
-    private ActorRef engine;
+    protected ActorRef engine;
 
-    private Connection connection;
+    protected Connection connection;
 
-    private final List<String> queries;
-
+    protected final List<String> queries;
+ 
     public PrepareTargetDatabaseActor(ActorRef pg) {
         this.pgConnectionActor = pg;
 
@@ -72,8 +72,13 @@ public class PrepareTargetDatabaseActor extends UntypedActor {
             });
 
             System.out.println("SQL queries executed");
-            this.engine.tell("target ready", null);
+            this.engine.tell(this.getResponse(), null);
         }
+    }
+    
+    protected String getResponse()
+    {
+       return "target ready";
     }
 
 }

@@ -22,12 +22,12 @@ import java.util.Map;
  */
 public class Runner {
 
-    private static Map<String, String> propertiesMap;
+    public static Map<String, String> PropertiesMap;
     
     public static void main(String[] args) throws Exception {
         ActorSystem system = ActorSystem.create("data-migration-system");
          
-        propertiesMap = new HashMap<>();
+        PropertiesMap = new HashMap<>();
         
         if(args != null && args.length > 0)
         {
@@ -35,13 +35,15 @@ public class Runner {
                 if (arg.contains("=")) {
                     String key = arg.substring(0, arg.indexOf('='));
                     String value = arg.substring(arg.indexOf('=') + 1);
-                    propertiesMap.put(key, value);
+                    PropertiesMap.put(key, value);
                 }
             }
         }
         
-        ActorRef msConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(MsSqlConnectionActor.class, propertiesMap.get("mssql-connection"))));
-        ActorRef pgConnectionActor = system.actorOf(new RoundRobinPool(8).props(Props.create(PgSqlConnectionActor.class, propertiesMap.get("pgsql-connection"))));
+        RoundRobinPool pool = new RoundRobinPool(8);
+        
+        ActorRef msConnectionActor = system.actorOf(pool.props(Props.create(MsSqlConnectionActor.class, PropertiesMap.get("mssql-connection"))));
+        ActorRef pgConnectionActor = system.actorOf(pool.props(Props.create(PgSqlConnectionActor.class, PropertiesMap.get("pgsql-connection"))));
 
         System.out.println("Actor sysrem data-migration-system started.");
 

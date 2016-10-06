@@ -11,12 +11,17 @@ package intapp.databasemigration.POCO;
  */
 public class Column {
 
-    public Column(String name, String type) {
+    public Column(String name, String type, boolean isNullable) {
         this.Name = name;
         this.Type = type;
+        this.IsNullable = isNullable;
     }
 
     public final String Name;
 
     public final String Type;
+    
+    public final boolean IsNullable;
+    
+    public boolean IsAutoFill;
 }

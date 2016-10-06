@@ -8,6 +8,7 @@ package intapp.databasemigration.Table;
 import intapp.databasemigration.POCO.Column;
 import intapp.databasemigration.POCO.Table;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  *
@@ -59,6 +60,21 @@ public class TableFormatter {
             else if(columnB.get().Type.equals("jsonb"))
             {
                 return "to_json(?::json)";
+            }
+            else if(columnA.get().IsAutoFill)
+            {
+                if(columnB.get().Type.toString().equalsIgnoreCase("varchar"))
+                {
+                    return "\"" + UUID.randomUUID().toString() + "\"";
+                }
+                else if(columnB.get().Type.toString().equalsIgnoreCase("boolean"))
+                {
+                    return "true";
+                }else   if(columnB.get().Type.toString().equalsIgnoreCase("USER-DEFINED"))
+                {
+                    return "'" + UUID.randomUUID().toString() + "'";
+                }
+                    
             }
         }
         return "?";

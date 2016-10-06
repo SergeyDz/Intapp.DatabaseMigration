@@ -30,8 +30,16 @@ public class MsSqlConnectionActor extends UntypedActor {
         
         if(connection == null)
         {
-            //Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");        
-            this.connection = DriverManager.getConnection(connectionString);
+            //Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver"); 
+            try 
+            {
+                this.connection = DriverManager.getConnection(connectionString);
+            } 
+            catch(Exception ex)
+            {
+               System.err.println(ex);
+               context().system().shutdown();
+            }
         }
         
         sender().tell(this.connection, self());

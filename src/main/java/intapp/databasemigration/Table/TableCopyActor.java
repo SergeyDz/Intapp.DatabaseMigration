@@ -14,8 +14,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import org.json.XML;
 
@@ -48,7 +46,9 @@ public class TableCopyActor extends UntypedActor {
     public void onReceive(Object message) throws Exception {
         if (message instanceof TableCopyRequest) {
             TableCopyRequest request = (TableCopyRequest) message;
+            
             this.sender = sender();
+            
             this.sourceTable = request.source;
             this.destinationTable = request.destination;
             System.out.println("Starting copy data for Table: " + sourceTable.Name);
@@ -96,7 +96,8 @@ public class TableCopyActor extends UntypedActor {
                     }
                 } 
                  
-                this.sender.tell(String.format("Done. %s completed. Total rows: %s.", destinationTable.Name, totalItems), self());
+                String report = String.format("Done. %s completed. Total rows: %s.", destinationTable.Name, totalItems);
+                this.sender.tell(report, self());
             }
         }
     }
@@ -115,7 +116,14 @@ public class TableCopyActor extends UntypedActor {
                     for (int i = 1; i <= meta.getColumnCount() - 1; i++) {
                         String columnName = meta.getColumnName(i);
                         if ("CustomFieldsXml".equals(columnName)) {
-                            s2.setObject(i, XML.toJSONObject(rs.getString(i)), java.sql.Types.VARCHAR);
+                            String xml = rs.getString(i);
+                            if(xml != null)
+                            {
+                                s2.setObject(i, XML.toJSONObject(xml), java.sql.Types.VARCHAR);
+                            }else
+                            {
+                                s2.setObject(i, XML.toJSONObject("{}"), java.sql.Types.VARCHAR);
+                            }
                         } else {
                             s2.setObject(i, rs.getObject(i));
                         }
@@ -134,15 +142,13 @@ public class TableCopyActor extends UntypedActor {
                 String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex + ". " + ex.getNextException();
                 System.err.println(error);
                 this.sender.tell(error, self());
-                
-                return 0;
+                throw ex;
             }
             catch (Exception ex) {
                 String error = "ERROR processing table " + this.sourceTable.Name + ": " + ex;
                 System.err.println(error);
                 this.sender.tell(error, self());
-                
-                return 0;
+                throw ex;
             }
             
             return counter;

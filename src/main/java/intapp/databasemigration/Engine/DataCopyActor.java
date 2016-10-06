@@ -12,10 +12,12 @@ import akka.routing.RoundRobinPool;
 import intapp.databasemigration.POCO.Table;
 import intapp.databasemigration.Table.TableCopyActor;
 import intapp.databasemigration.POCO.TableCopyRequest;
+import intapp.databasemigration.Runner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -46,7 +48,7 @@ public class DataCopyActor extends UntypedActor {
         this.workers = 0;
         this.statuses = new ArrayList<>();
 
-        skip = Arrays.asList("Configs");
+        skip = Arrays.asList(Runner.PropertiesMap.get("skip").split(","));
     }
 
     @Override
@@ -54,38 +56,37 @@ public class DataCopyActor extends UntypedActor {
         if ("start".equals(message)) {
             
             this.sender = sender();
-            RoundRobinPool pool = new RoundRobinPool(8);
+            RoundRobinPool pool = new RoundRobinPool(8);        
             
-            this.source.forEach(a -> {
+            List<Table> workerItems = this.source.stream().filter(s -> !skip.contains(s.Name) 
+                    && destination.stream().filter(m -> m.Name.toLowerCase().equals(s.Name.toLowerCase())).findAny().isPresent())
+                    .collect(Collectors.toList());
+            this.workers = workerItems.size();
 
-                if (!skip.contains(a.Name)) {
+            workerItems.forEach(a -> {
                     Optional<Table> destTable = destination.stream().filter(m -> m.Name.toLowerCase().equals(a.Name.toLowerCase())).findFirst();
-
                     if (destTable.isPresent()) {
                         ActorRef tableCopyActor = context().actorOf(pool.props(Props.create(TableCopyActor.class, this.msConnectionActor, this.pgConnectionActor)));
                         tableCopyActor.tell(new TableCopyRequest(a, destTable.get()), self());
-                        this.workers++;
-                    } else {
-                        System.err.println("Destination table for source " + a.Name + " was not found");
-                    }
-                } else {
-                    System.out.println("Table " + a.Name + " skipped.");
-                }
+                    } 
             });
         }
         else if(message instanceof String)
         {
-            this.workers--;
             this.statuses.add(message.toString());
+             
+             this.workers--;
             
-            if(this.workers == 0)
+            if(this.workers <= 0)
             {
                 System.out.println("Work completed");
-                this.statuses.forEach(a->{
-                    System.out.println(a);
-                });
+                this.statuses.forEach(a->{ System.out.println(a); });
                 
-                this.sender.tell("Done", self());
+                int total = this.statuses.size();
+                long errors = this.statuses.stream().filter(a -> a.startsWith("ERROR")).count();
+                
+                
+                this.sender.tell(String.format("Done. Copied tables: %s, Errors: %s", total - errors, errors), self());
             }
         }
     }

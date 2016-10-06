@@ -28,9 +28,17 @@ public class PgSqlConnectionActor extends UntypedActor {
     public void onReceive(Object message) throws Exception {
 
         if (connection == null) {
-            System.out.println("Get pgsql connection");
-            Class.forName("org.postgresql.Driver");
-            this.connection = DriverManager.getConnection(this.connectionString);
+            try
+            {
+                System.out.println("Get pgsql connection");
+                Class.forName("org.postgresql.Driver");
+                this.connection = DriverManager.getConnection(this.connectionString);
+            }
+            catch(Exception ex)
+            {
+               System.err.println(ex);
+               context().system().shutdown();
+            }
         }
 
         sender().tell(connection, self());

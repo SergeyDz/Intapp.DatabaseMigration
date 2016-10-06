@@ -10,12 +10,15 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import intapp.databasemigration.Metadata.MsSqlSchemaActor;
 import intapp.databasemigration.Metadata.PgSqlSchemaActor;
+import intapp.databasemigration.POCO.Column;
 import intapp.databasemigration.POCO.PrepareDatabaseRequest;
 import intapp.databasemigration.POCO.SchemaResult;
 import intapp.databasemigration.POCO.Table;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -66,13 +69,57 @@ public class MigrationEngineActor extends UntypedActor {
 
         } 
         else if ("target ready".equals(message)) {
+            
+            this.determineAndFixNullableColumns();
+            
             ActorRef dataCopyActor = context().actorOf(Props.create(DataCopyActor.class, this.MsSqlTables, this.PgSqlTables, this.msConnectionActor, this.pgConnectionActor));
             dataCopyActor.tell("start", self());
         }
-        else if("Done".equals(message))
-        {
+         else if ("finalized".equals(message)) {
             context().system().shutdown();
         }
+        else if(message.toString().startsWith("Done."))
+        {
+            System.out.println(message);
+            ActorRef dataCopyActor = context().actorOf(Props.create(FinalizeTargetDatabaseActor.class, this.pgConnectionActor));
+            dataCopyActor.tell(new PrepareDatabaseRequest(Arrays.asList("RestoreForeignKeys.sql")), self());
+        }
+    }
+    
+    private void determineAndFixNullableColumns()
+    {
+        this.MsSqlTables.forEach(source -> {
+            Optional<Table> d1 = this.PgSqlTables.stream().filter(x -> x.Name.toLowerCase().equals(source.Name.toLowerCase())).findFirst();
+            if(d1.isPresent())
+            {
+                Table d2 = d1.get();
+                List<Column> columnsToAdd = new ArrayList<>();
+                
+                d2.Columns.forEach(x -> {
+                    Optional<Column> d3 = source.Columns.stream().filter(y -> y.Name.toLowerCase().equals(x.Name.toLowerCase())).findFirst();
+                    
+                    if(d3.isPresent() || x.IsNullable)
+                    {
+                        // it's ok
+                    }
+                    else
+                    {
+                        Column c = new Column(x.Name, x.Type, x.IsNullable);
+                        c.IsAutoFill = true;
+                        columnsToAdd.add(c);
+                    }
+                });
+                
+                if(columnsToAdd.size() > 0)
+                {
+                    columnsToAdd.forEach(x -> {
+                        source.Columns.add(x);
+                    });
+                }
+            }
+            
+        });
+        
     }
 
 }

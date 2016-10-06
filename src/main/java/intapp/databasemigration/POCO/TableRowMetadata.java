@@ -19,6 +19,7 @@ public class TableRowMetadata {
         this.Table = rs.getString("table");
         this.Column = rs.getString("column");
         this.Type = rs.getString("type");
+        this.IsNullable = rs.getString("nullable").equals("YES");
     }
 
     public String Schema;
@@ -28,4 +29,6 @@ public class TableRowMetadata {
     public String Column;
 
     public String Type;
+    
+    public boolean IsNullable;
 }

@@ -57,7 +57,7 @@ public class SchemaActor extends UntypedActor {
         groupedMetadata.forEach((key, values) -> {
             Table t = new Table(values.get(0).Schema, key);
             values.forEach(c -> {
-                t.Columns.add(new Column(c.Column, c.Type));
+                t.Columns.add(new Column(c.Column, c.Type, c.IsNullable));
             });
 
             tables.add(t);

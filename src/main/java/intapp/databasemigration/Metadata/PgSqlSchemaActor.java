@@ -14,7 +14,7 @@ public class PgSqlSchemaActor extends SchemaActor {
     public PgSqlSchemaActor() {
         super();
 
-        this.sql = "SELECT table_schema as \"schema\", table_name as \"table\", column_name as \"column\", data_type as \"type\""
+        this.sql = "SELECT table_schema as \"schema\", table_name as \"table\", column_name as \"column\", data_type as \"type\", is_nullable as \"nullable\""
                 + " FROM information_schema.columns"
                 + " WHERE table_schema = 'public'";
     }
